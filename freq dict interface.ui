@@ -45,7 +45,7 @@
          </rect>
         </property>
         <property name="text">
-         <string>Варіаційний ряд</string>
+         <string>Row of variations</string>
         </property>
        </widget>
        <widget class="QLabel" name="label_2">
@@ -58,7 +58,7 @@
          </rect>
         </property>
         <property name="text">
-         <string>Варіаційний ряд</string>
+         <string>Row of variations</string>
         </property>
        </widget>
        <widget class="QLabel" name="label_3">
@@ -71,7 +71,7 @@
          </rect>
         </property>
         <property name="text">
-         <string>Полігон частот</string>
+         <string>Frequency polygon</string>
         </property>
        </widget>
        <widget class="QTabWidget" name="tabWidget_2">
@@ -88,7 +88,7 @@
         </property>
         <widget class="QWidget" name="tab_14">
          <attribute name="title">
-          <string>Вибірка 1</string>
+          <string>Text 1</string>
          </attribute>
          <widget class="QTableWidget" name="tableWidget">
           <property name="geometry">
@@ -116,7 +116,7 @@
         </widget>
         <widget class="QWidget" name="tab_15">
          <attribute name="title">
-          <string>Вибірка 2</string>
+          <string>Text 2</string>
          </attribute>
          <widget class="QTableWidget" name="tableWidget_3">
           <property name="geometry">
@@ -157,7 +157,7 @@
         </property>
         <widget class="QWidget" name="tab_16">
          <attribute name="title">
-          <string>Вибірка 1</string>
+          <string>Text 1</string>
          </attribute>
          <widget class="QTableWidget" name="tableWidget_2">
           <property name="geometry">
@@ -192,7 +192,7 @@
         </widget>
         <widget class="QWidget" name="tab_17">
          <attribute name="title">
-          <string>Вибірка 2</string>
+          <string>Text 2</string>
          </attribute>
          <widget class="QTableWidget" name="tableWidget_4">
           <property name="geometry">
@@ -252,7 +252,7 @@
            </rect>
           </property>
           <property name="text">
-           <string>Варіаційний ряд</string>
+           <string>Row of variations</string>
           </property>
          </widget>
         </widget>
@@ -270,7 +270,7 @@
            </rect>
           </property>
           <property name="text">
-           <string>Варіаційний ряд</string>
+           <string>Row of variations</string>
           </property>
          </widget>
         </widget>
@@ -285,62 +285,62 @@
       </widget>
       <widget class="QWidget" name="tab_2">
        <attribute name="title">
-        <string>Прикметник</string>
+        <string>Adjective</string>
        </attribute>
       </widget>
       <widget class="QWidget" name="tab_3">
        <attribute name="title">
-        <string>Дієслово</string>
+        <string>Verb</string>
        </attribute>
       </widget>
       <widget class="QWidget" name="tab_4">
        <attribute name="title">
-        <string>Займенник</string>
+        <string>Pronoun</string>
        </attribute>
       </widget>
       <widget class="QWidget" name="tab_5">
        <attribute name="title">
-        <string>Прислівник</string>
+        <string>Adverb</string>
        </attribute>
       </widget>
       <widget class="QWidget" name="tab_6">
        <attribute name="title">
-        <string>Прийменник</string>
+        <string>Preposition</string>
        </attribute>
       </widget>
       <widget class="QWidget" name="tab_7">
        <attribute name="title">
-        <string>Дієприслівник</string>
+        <string>adverbial participle</string>
        </attribute>
       </widget>
       <widget class="QWidget" name="tab_8">
        <attribute name="title">
-        <string>Сполучник</string>
+        <string>Conjunction</string>
        </attribute>
       </widget>
       <widget class="QWidget" name="tab_9">
        <attribute name="title">
-        <string>Частка</string>
+        <string>Particle</string>
        </attribute>
       </widget>
       <widget class="QWidget" name="tab_10">
        <attribute name="title">
-        <string>Предикатив</string>
+        <string>Predicative</string>
        </attribute>
       </widget>
       <widget class="QWidget" name="tab_11">
        <attribute name="title">
-        <string>Компаратив</string>
+        <string>Comparative</string>
        </attribute>
       </widget>
       <widget class="QWidget" name="tab_12">
        <attribute name="title">
-        <string>Числівник</string>
+        <string>Numeral</string>
        </attribute>
       </widget>
       <widget class="QWidget" name="tab_13">
        <attribute name="title">
-        <string>Вигук</string>
+        <string>Exclamation</string>
        </attribute>
       </widget>
      </widget>
