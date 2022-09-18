@@ -1,1 +1,682 @@
-{"nbformat":4,"nbformat_minor":0,"metadata":{"colab":{"name":"Створення частотних словників.ipynb","provenance":[],"authorship_tag":"ABX9TyO+7JubF9asqaN273jBpX+/"},"kernelspec":{"name":"python3","display_name":"Python 3"},"language_info":{"name":"python"}},"cells":[{"cell_type":"code","metadata":{"id":"X5l6aikeuXtW"},"source":["#!/usr/bin/env python\n","# coding: utf-8\n","\n","import sqlite3\n","import re\n","import pymorphy2"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"hc1Y4nrbumuA"},"source":["#Створюємо базу даних і таблицю частотності словоформ\n","\n","conn = sqlite3.connect('frequency_dict.db')\n","cursor = conn.cursor()\n","\n","cursor.execute('''CREATE TABLE IF NOT EXISTS част_словоформ\n","                  (словоформа TEXT PRIMARY KEY NOT NULL,\n","                  gen_freq INTEGER,\n","                  підв_1 INTEGER,\n","                  підв_2 INTEGER,\n","                  підв_3 INTEGER,\n","                  підв_4 INTEGER,\n","                  підв_5 INTEGER,\n","                  підв_6 INTEGER,\n","                  підв_7 INTEGER,\n","                  підв_8 INTEGER,\n","                  підв_9 INTEGER,\n","                  підв_10 INTEGER,\n","                  підв_11 INTEGER,\n","                  підв_12 INTEGER,\n","                  підв_13 INTEGER,\n","                  підв_14 INTEGER,\n","                  підв_15 INTEGER,\n","                  підв_16 INTEGER,\n","                  підв_17 INTEGER,\n","                  підв_18 INTEGER,\n","                  підв_19 INTEGER,\n","                  підв_20 INTEGER)\n","''')\n","\n","cursor.execute('''CREATE TABLE IF NOT EXISTS част_частин_мови\n","                  (частина_мови TEXT PRIMARY KEY NOT NULL,\n","                  gen_freq INTEGER,\n","                  x_aver INTEGER,\n","                  relative_freq INTEGER,\n","                  підв_1 INTEGER,\n","                  підв_2 INTEGER,\n","                  підв_3 INTEGER,\n","                  підв_4 INTEGER,\n","                  підв_5 INTEGER,\n","                  підв_6 INTEGER,\n","                  підв_7 INTEGER,\n","                  підв_8 INTEGER,\n","                  підв_9 INTEGER,\n","                  підв_10 INTEGER,\n","                  підв_11 INTEGER,\n","                  підв_12 INTEGER,\n","                  підв_13 INTEGER,\n","                  підв_14 INTEGER,\n","                  підв_15 INTEGER,\n","                  підв_16 INTEGER,\n","                  підв_17 INTEGER,\n","                  підв_18 INTEGER,\n","                  підв_19 INTEGER,\n","                  підв_20 INTEGER)\n","''')\n","\n","cursor.execute('''CREATE TABLE IF NOT EXISTS част_лем\n","                  (лема TEXT PRIMARY KEY NOT NULL,\n","                  gen_freq INTEGER,\n","                  підв_1 INTEGER,\n","                  підв_2 INTEGER,\n","                  підв_3 INTEGER,\n","                  підв_4 INTEGER,\n","                  підв_5 INTEGER,\n","                  підв_6 INTEGER,\n","                  підв_7 INTEGER,\n","                  підв_8 INTEGER,\n","                  підв_9 INTEGER,\n","                  підв_10 INTEGER,\n","                  підв_11 INTEGER,\n","                  підв_12 INTEGER,\n","                  підв_13 INTEGER,\n","                  підв_14 INTEGER,\n","                  підв_15 INTEGER,\n","                  підв_16 INTEGER,\n","                  підв_17 INTEGER,\n","                  підв_18 INTEGER,\n","                  підв_19 INTEGER,\n","                  підв_20 INTEGER)\n","''')"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"m3Te88tku6EO"},"source":["with open(\"вибірка 1.txt\",  encoding = \"utf-8\") as data_1:\n","    text_1 = data_1.read().lower()"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"sO3psZYovn8A"},"source":["#Робимо токенізацію\n","\n","without_punc_marks = []\n","edited = re.sub('\\.', '', text_1)\n","edited = re.sub(',', '', edited)\n","edited = re.sub('!', '', edited)\n","edited = re.sub('\\?', '', edited)\n","edited = re.sub(':', '', edited)\n","edited = re.sub(';', '', edited)\n","edited = re.sub('\\.\\.', '', edited)\n","edited = re.sub('\\(', '', edited)\n","edited = re.sub('\\)', '', edited)\n","edited = re.sub('[a-zA-Z]+', '', edited)\n","edited = re.sub('\"', '', edited)\n","edited = re.sub(\"'\", '', edited)\n","edited = re.sub('\\[', '', edited)\n","edited = re.sub('\\]', '', edited)\n","edited = re.sub('\\d', '', edited)\n","edited = re.sub('%', '', edited)\n","edited = re.sub('\\\\\\\\', '', edited)\n","edited = re.sub('\\n', ' ', edited)\n","edited = re.sub(\"'\\]\", '', edited)\n","edited = re.sub(\"\\['\", '', edited)\n","edited = re.sub('\\s-\\s', ' ', edited)\n","without_punc_marks.append(edited)\n","#print(without_punc_marks)\n","\n","splitted_1 = str(without_punc_marks).split(' ')\n","#print(splitted_1)\n","\n","#Видаляємо пусті слова\n","try:\n","    for i in splitted_1:\n","        if i == '':\n","            splitted_1.remove(i)\n","except:\n","    print('Пустих слів немає')"],"execution_count":null,"outputs":[]},{"cell_type":"markdown","metadata":{"id":"Ts4r8XJG1xN1"},"source":["Створимо частотний словник словоформ"]},{"cell_type":"code","metadata":{"id":"4R3xZKBtvp4l"},"source":["#Відраховуємо потрібну кількість слововживань (20000)\n","count = 0\n","edited_list = []\n","for word in splitted_1:\n","    if count == 20000:\n","        break\n","    count += 1\n","    edited_list.append(word)\n","#print(edited_list)\n","\n","sample_1_dict = {}\n","sample_1_list = []"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"dne_fDiMvxZ-"},"source":["\"\"\"\n","Ділимо вибірку на підвибірки.\n","Першу і другу підвибірки виділяємо окремо.\n","\n","Одночасно з визначенням вмісту підвибірок, додаємо всі слова до списку (окремий \n","для кожної підв.), а також створюємо словники такої структури: \n","{'словоформа': \"['словоформа', 'частота в 1 підв.', 'част. в 2 підв.',... 'част. в 20 підв.']\"}\n","\"\"\"\n","count = 0\n","x = 0\n","for word in edited_list:\n","    if count == 1000:\n","        break\n","    count += 1\n","    sample_1_list.append(word)\n","    if word in sample_1_dict:\n","         sample_1_dict[word][1] += 1\n","    else:\n","         sample_1_dict[word] = [word]\n","         sample_1_dict[word].append(1)\n","#for key, value in sample_1_dict.items():\n","#    print(f\"{key}: {value}\")\n","#print(sample_1_list)\n","\n","sample_2_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","\n","    if 1000 < count < 2001:\n","       sample_2_list.append(word)\n","       if word in sample_1_dict:\n","           try:\n","               sample_1_dict[word][2] += 1 # якщо слово не вперше зустр. в 2 підв.\n","           except:\n","               sample_1_dict[word].append(1) # слово вперше зустр. в 2 підв.\n","       else:\n","         sample_1_dict[word] = [word] # слова не було в 1 підв. => відсутнє в словнику\n","         x = 0\n","         for i in sample_1_dict[word]:\n","             while x < 1:\n","                sample_1_dict[word].append(0)\n","                x += 1\n","         sample_1_dict[word].append(1)\n","#print(sample_2_list)\n","#for key, value in sample_1_dict.items():\n","#   print(f\"{key}: {value}\")"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"5TWR-RtUzMPk"},"source":["# Функція, за якою відбуватиметься підрахунок словоформ в інших підв. (3-20)\n","def divide_on_samples(number):\n","    if word in sample_1_dict:\n","          try:\n","               sample_1_dict[word][number] += 1 # слово не вперше зустр. в підв.\n","          except:\n","             sample_len = len(sample_1_dict[word])\n","             if sample_len < number: # слова не було в попередній(-іх) підв.\n","                x = sample_len\n","                while x < number:\n","                    sample_1_dict[word].append(0) # додаємо 0 у значення частот\n","                    x += 1\n","                sample_1_dict[word].append(1)\n","             else:\n","                sample_1_dict[word].append(1) # слово вперше зустр. в підв.\n","    else:\n","         sample_1_dict[word] = [word] # слова не було в словнику\n","         x = 0\n","         while x < number-1: # додаємо 0 у значення частот\n","                sample_1_dict[word].append(0)\n","                x += 1\n","         sample_1_dict[word].append(1)"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"ue2PxZ4rzbAQ"},"source":["sample_3_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 2000 < count < 3001:\n","       sample_3_list.append(word)\n","       divide_on_samples(3)\n","#print(sample_3_list)\n","#for key, value in sample_1_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_4_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 3000 < count < 4001:\n","       sample_4_list.append(word)\n","       divide_on_samples(4)\n","#print(sample_4_list)\n","#for key, value in sample_1_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_5_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 4000 < count < 5001:\n","       sample_5_list.append(word)\n","       divide_on_samples(5)\n","#print(sample_5_list)\n","#for key, value in sample_1_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_6_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 5000 < count < 6001:\n","       sample_6_list.append(word)\n","       divide_on_samples(6)\n","#print(sample_6_list)\n","#for key, value in sample_1_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_7_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 6000 < count < 7001:\n","       sample_7_list.append(word)\n","       divide_on_samples(7)\n","#print(sample_7_list)\n","#for key, value in sample_1_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_8_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 7000 < count < 8001:\n","       sample_8_list.append(word)\n","       divide_on_samples(8)\n","#print(sample_8_list)\n","#for key, value in sample_1_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_9_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 8000 < count < 9001:\n","       sample_9_list.append(word)\n","       divide_on_samples(9)\n","#print(sample_9_list)\n","#for key, value in sample_1_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_10_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 9000 < count < 10001:\n","       sample_10_list.append(word)\n","       divide_on_samples(10)\n","#print(sample_10_list)\n","#for key, value in sample_1_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_11_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 10000 < count < 11001:\n","       sample_11_list.append(word)\n","       divide_on_samples(11)\n","#print(sample_11_list)\n","#for key, value in sample_1_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_12_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 11000 < count < 12001:\n","       sample_12_list.append(word)\n","       divide_on_samples(12)\n","#print(sample_12_list)\n","#for key, value in sample_1_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_13_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 12000 < count < 13001:\n","       sample_13_list.append(word)\n","       divide_on_samples(13)\n","#print(sample_13_list)\n","#for key, value in sample_13_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_14_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 13000 < count < 14001:\n","       sample_14_list.append(word)\n","       divide_on_samples(14)\n","#print(sample_14_list)\n","#for key, value in sample_14_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_15_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 14000 < count < 15001:\n","       sample_15_list.append(word)\n","       divide_on_samples(15)\n","#print(sample_15_list)\n","#for key, value in sample_15_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_16_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 15000 < count < 16001:\n","       sample_16_list.append(word)\n","       divide_on_samples(16)\n","#print(sample_16_list)\n","#for key, value in sample_16_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_17_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 16000 < count < 17001:\n","       sample_17_list.append(word)\n","       divide_on_samples(17)\n","#print(sample_17_list)\n","#for key, value in sample_17_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_18_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 17000 < count < 18001:\n","       sample_18_list.append(word)\n","       divide_on_samples(18)\n","#print(sample_18_list)\n","#for key, value in sample_18_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_19_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 18000 < count < 19001:\n","       sample_19_list.append(word)\n","       divide_on_samples(19)\n","#print(sample_19_list)\n","#for key, value in sample_19_dict.items():\n","#   print(f\"{key}: {value}\")\n","\n","sample_20_list = []\n","count = 0\n","for word in edited_list:\n","    count +=1\n","    if 19000 < count:\n","       sample_20_list.append(word)\n","       divide_on_samples(20)\n","#print(sample_20_list)\n","#for key, value in sample_1_dict.items():\n","#   print(f\"{key}: {value}\")"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"PmjPYRXo09yj"},"source":["values1 = list(sample_1_dict.values())"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"LRzJILdv1JWi"},"source":["#Додаємо значення 0 до словоформ, які зустрілися лише в першій підвибірці\n","x = 2\n","for i in values1:\n","    while len(i) <21:\n","        i.append(0)\n","        x += 1\n","\n","\n","    gen_freq = sum(i[1:21]) #додаємо до списку загальу кількість слововживань\n","    i.insert(1, gen_freq)"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"OVGj1hZG1OJq"},"source":["values1_ordered = sorted(values1, key=lambda x:x[1], reverse=True)"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"zojYxO7m1RXg"},"source":["for i in values1_ordered:\n","   cursor.execute(\"\"\"INSERT INTO част_словоформ\n","                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\"\"\", i)\n","conn.commit()"],"execution_count":null,"outputs":[]},{"cell_type":"markdown","metadata":{"id":"EaWwpv2V1kE6"},"source":["Створимо частотний словник частин мови"]},{"cell_type":"code","metadata":{"id":"p7HQGvQp1si4"},"source":["morph = pymorphy2.MorphAnalyzer(lang='uk')\n","part_of_speech = {}"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"vatV6HEm1-9L"},"source":["# обраховуємо та додаємо до словника частоту частин мови у першій підвибірці\n","# для 1 і 2 підв. додаємо частоту частин мови так само окремо \n","for i in sample_1_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    #print(freq)\n","    if freq in part_of_speech:\n","        part_of_speech[freq][1] += 1\n","    else:\n","        part_of_speech[freq] = [freq]\n","        part_of_speech[freq].append(1)\n","    #print(i + ' ' + str(parsed1.tag.POS))\n","#print(part_of_speech)\n","\n","for i in sample_2_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    #print(freq)\n","    if freq in part_of_speech:\n","        try:\n","            part_of_speech[freq][2] += 1\n","        except:\n","            part_of_speech[freq].append(1)\n","    else:\n","        part_of_speech[freq] = [freq]\n","        x = 0\n","        for o in part_of_speech[freq]:\n","             while x < 1:\n","                part_of_speech[freq].append(0)\n","                x += 1\n","        part_of_speech[freq].append(1)\n","#print(part_of_speech)\n"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"wr6xar-g2yqM"},"source":["def count_parts_of_speech(number):\n","    if freq in part_of_speech:\n","        try:\n","            part_of_speech[freq][number] += 1\n","        except:\n","            freq_len = len(part_of_speech[freq])\n","            if freq_len < number:\n","                x = freq_len\n","                while x < number:\n","                    part_of_speech[freq].append(0)\n","                    x += 1\n","                part_of_speech[freq].append(1)\n","            else:\n","                part_of_speech[freq].append(1)\n","    else:\n","        part_of_speech[freq] = [freq]\n","        x = 0\n","        while x < number-1:\n","                part_of_speech[freq].append(0)\n","                x += 1\n","        part_of_speech[freq].append(1)"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"sHt-FIsJ24AA"},"source":["for i in sample_3_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    #print(freq)\n","    count_parts_of_speech(3)\n","#print(part_of_speech)\n","\n","for i in sample_4_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(4)\n","#print(part_of_speech)\n","\n","for i in sample_5_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    #print(freq)\n","    count_parts_of_speech(5)\n","#print(part_of_speech)\n","\n","for i in sample_6_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(6)\n","#print(part_of_speech)\n","\n","for i in sample_7_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(7)\n","#print(part_of_speech)\n","\n","for i in sample_8_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    #print(freq)\n","    count_parts_of_speech(8)\n","#print(part_of_speech)\n","\n","for i in sample_9_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(9)\n","#print(part_of_speech)\n","\n","for i in sample_10_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(10)\n","#print(part_of_speech)\n","\n","for i in sample_11_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    if freq in part_of_speech:\n","        count_parts_of_speech(11)\n","#print(part_of_speech)\n","\n","for i in sample_12_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(12)\n","#print(part_of_speech)\n","\n","for i in sample_13_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(13)\n","#print(part_of_speech)\n","\n","for i in sample_14_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(14)\n","#print(part_of_speech)\n","\n","for i in sample_15_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(15)\n","#print(part_of_speech)\n","\n","for i in sample_16_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(16)\n","#print(part_of_speech)\n","\n","for i in sample_17_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(17)\n","#print(part_of_speech)\n","\n","for i in sample_18_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(18)\n","#print(part_of_speech)\n","\n","for i in sample_14_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(19)\n","#print(part_of_speech)\n","\n","for i in sample_20_list:\n","    parsed1 = morph.parse(i)[0]\n","    freq = parsed1.tag.POS\n","    count_parts_of_speech(20)\n","#print(part_of_speech)"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"zyTHOFBm2-AQ"},"source":["values2 = list(part_of_speech.values())"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"nrJF5iPC3BTw"},"source":["for i in values2:\n","    while len(i) <21:\n","        i.append(0)\n","\n","    gen_freq = sum(i[1:21]) #додаємо до списку загальу кількість слововживань\n","    i.insert(1, gen_freq)\n","\n","for i in values2:\n","    if i[0] == None:\n","        values2.remove(i)\n","#print(values2)\n","\n","values2_ordered = sorted(values2, key=lambda x:x[1], reverse=True)\n","#print(values2_ordered)\n","\n","for i in values2_ordered:\n","    i.insert(2, i[1]/20)\n","    i.insert(3, round(i[1]/20000, 3))\n","#print(values2_ordered)"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"WHh3xBVP3IZp"},"source":["for i in values2_ordered:\n","   cursor.execute(\"\"\"INSERT INTO част_частин_мови\n","                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\"\"\", i)\n","conn.commit()"],"execution_count":null,"outputs":[]},{"cell_type":"markdown","metadata":{"id":"VK8-CpOU3TSU"},"source":["Створюємо частотний словник лем"]},{"cell_type":"code","metadata":{"id":"6LMksRGo3adK"},"source":["lemmas = {}\n","for i in sample_1_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    #print(normal_form)\n","    if normal_form in lemmas:\n","        lemmas[normal_form][1] += 1\n","    else:\n","        lemmas[normal_form] = [normal_form]\n","        lemmas[normal_form].append(1)\n","#print(lemmas)\n","\n","for i in sample_2_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    if normal_form in lemmas:\n","        try:\n","            lemmas[normal_form][2] += 1\n","        except:\n","            lemmas[normal_form].append(1)\n","    else:\n","        lemmas[normal_form] = [normal_form]\n","        x = 0\n","        for o in lemmas[normal_form]:\n","             while x < 1:\n","                lemmas[normal_form].append(0)\n","                x += 1\n","        lemmas[normal_form].append(1)\n","#print(lemmas)\n","\n","def count_lemmas(number):\n","    if normal_form in lemmas:\n","        try:\n","            lemmas[normal_form][number] += 1\n","        except:\n","            lemmas_len = len(lemmas[normal_form])\n","            if lemmas_len < number:\n","                x = lemmas_len\n","                while x < number:\n","                    lemmas[normal_form].append(0)\n","                    x += 1\n","                lemmas[normal_form].append(1)\n","            else:\n","                lemmas[normal_form].append(1)\n","    else:\n","        lemmas[normal_form] = [normal_form]\n","        x = 0\n","        for o in lemmas[normal_form]:\n","             while x < number-1:\n","                lemmas[normal_form].append(0)\n","                x += 1\n","        lemmas[normal_form].append(1)\n","\n","for i in sample_3_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(3)\n","#print(lemmas)\n","\n","for i in sample_4_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(4)\n","#print(lemmas)\n","\n","for i in sample_5_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(5)\n","#print(lemmas)\n","\n","for i in sample_6_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(6)\n","#print(lemmas)\n","\n","for i in sample_7_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(7)\n","#print(lemmas)\n","\n","for i in sample_8_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(8)\n","#print(lemmas)\n","\n","for i in sample_9_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(9)\n","#print(lemmas)\n","\n","for i in sample_10_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(10)\n","#print(lemmas)\n","\n","for i in sample_11_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(11)\n","#print(lemmas)\n","\n","for i in sample_12_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(12)\n","#print(lemmas)\n","\n","for i in sample_13_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(13)\n","#print(lemmas)\n","\n","for i in sample_14_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(14)\n","#print(lemmas)\n","\n","for i in sample_15_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(15)\n","#print(lemmas)\n","\n","for i in sample_16_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(16)\n","#print(lemmas)\n","\n","for i in sample_17_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(17)\n","#print(lemmas)\n","\n","for i in sample_18_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(18)\n","#print(lemmas)\n","\n","for i in sample_19_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(19)\n","#print(lemmas)\n","\n","for i in sample_20_list:\n","    normal_form = morph.parse(i)[0].normal_form\n","    count_lemmas(20)\n","#print(lemmas)\n","\n","values3 = list(lemmas.values())\n","for i in values3:\n","    while len(i) <21:\n","        i.append(0)\n","\n","    gen_freq = sum(i[1:21]) #додаємо до списку загальу кількість слововживань\n","    i.insert(1, gen_freq)\n","#print(values3)\n","\n","values3_ordered = sorted(values3, key=lambda x:x[1], reverse=True)"],"execution_count":null,"outputs":[]},{"cell_type":"code","metadata":{"id":"J1PXLw9N3hvj"},"source":["for i in values3_ordered:\n","   cursor.execute(\"\"\"INSERT INTO част_лем\n","                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)\"\"\", i)\n","conn.commit()\n","\n","conn.close()"],"execution_count":null,"outputs":[]}]}
+#!/usr/bin/env python
+# coding: utf-8
+
+import sqlite3
+import re
+import pymorphy2
+
+
+''' Creating a database (DB). The DB contains 3 tables: frequency table of words forms, lemmas and parts of speech.
+The lenght of the chosen part of a text, which is to be analysed is 20,000 tokens (word forms).
+The text is going to be devided into 20 samples, each is 1000 tokens long. It is done with the purpose of making further linguistical analysis
+of a text possible.
+'''
+
+conn = sqlite3.connect('frequency_dict.db')
+cursor = conn.cursor()
+
+cursor.execute('''CREATE TABLE IF NOT EXISTS words_forms_freq
+                  (word_form TEXT PRIMARY KEY NOT NULL,
+                  gen_freq INTEGER, # frequency of a word form in a whole text
+                  sample_1 INTEGER, # frequency of a word form in the first sample of the text (one sample = 1000 tokens)
+                  sample_2 INTEGER,
+                  sample_3 INTEGER,
+                  sample_4 INTEGER,
+                  sample_5 INTEGER,
+                  sample_6 INTEGER,
+                  sample_7 INTEGER,
+                  sample_8 INTEGER,
+                  sample_9 INTEGER,
+                  sample_10 INTEGER,
+                  sample_11 INTEGER,
+                  sample_12 INTEGER,
+                  sample_13 INTEGER,
+                  sample_14 INTEGER,
+                  sample_15 INTEGER,
+                  sample_16 INTEGER,
+                  sample_17 INTEGER,
+                  sample_18 INTEGER,
+                  sample_19 INTEGER,
+                  sample_20 INTEGER)
+''')
+
+cursor.execute('''CREATE TABLE IF NOT EXISTS part_of_speech_freq
+                  (part_of_speech TEXT PRIMARY KEY NOT NULL,
+                  gen_freq INTEGER,
+                  x_aver INTEGER, # average frequency of a part of speech in all samples
+                  relative_freq INTEGER,
+                  sample_1 INTEGER,
+                  sample_2 INTEGER,
+                  sample_3 INTEGER,
+                  sample_4 INTEGER,
+                  sample_5 INTEGER,
+                  sample_6 INTEGER,
+                  sample_7 INTEGER,
+                  sample_8 INTEGER,
+                  sample_9 INTEGER,
+                  sample_10 INTEGER,
+                  sample_11 INTEGER,
+                  sample_12 INTEGER,
+                  sample_13 INTEGER,
+                  sample_14 INTEGER,
+                  sample_15 INTEGER,
+                  sample_16 INTEGER,
+                  sample_17 INTEGER,
+                  sample_18 INTEGER,
+                  sample_19 INTEGER,
+                  sample_20 INTEGER)
+''')
+
+cursor.execute('''CREATE TABLE IF NOT EXISTS lemmas_freq
+                  (lemma TEXT PRIMARY KEY NOT NULL,
+                  gen_freq INTEGER,
+                  sample_1 INTEGER,
+                  sample_2 INTEGER,
+                  sample_3 INTEGER,
+                  sample_4 INTEGER,
+                  sample_5 INTEGER,
+                  sample_6 INTEGER,
+                  sample_7 INTEGER,
+                  sample_8 INTEGER,
+                  sample_9 INTEGER,
+                  sample_10 INTEGER,
+                  sample_11 INTEGER,
+                  sample_12 INTEGER,
+                  sample_13 INTEGER,
+                  sample_14 INTEGER,
+                  sample_15 INTEGER,
+                  sample_16 INTEGER,
+                  sample_17 INTEGER,
+                  sample_18 INTEGER,
+                  sample_19 INTEGER,
+                  sample_20 INTEGER)
+''')
+
+
+with open("text.txt",  encoding = "utf-8") as data_1:
+    text_1 = data_1.read().lower()
+
+    
+# Making tokenization (removing all symbols, that are not words; separating the text on tokens)
+without_punc_marks = []
+edited = re.sub('\.', '', text_1)
+edited = re.sub(',', '', edited)
+edited = re.sub('!', '', edited)
+edited = re.sub('\?', '', edited)
+edited = re.sub(':', '', edited)
+edited = re.sub(';', '', edited)
+edited = re.sub('\.\.', '', edited)
+edited = re.sub('\(', '', edited)
+edited = re.sub('\)', '', edited)
+edited = re.sub('[a-zA-Z]+', '', edited)
+edited = re.sub('"', '', edited)
+edited = re.sub("'", '', edited)
+edited = re.sub('\[', '', edited)
+edited = re.sub('\]', '', edited)
+edited = re.sub('\d', '', edited)
+edited = re.sub('%', '', edited)
+edited = re.sub('\\\\', '', edited)
+edited = re.sub('\n', ' ', edited)
+edited = re.sub("'\]", '', edited)
+edited = re.sub("\['", '', edited)
+edited = re.sub('\s-\s', ' ', edited)
+without_punc_marks.append(edited)
+
+splitted_1 = str(without_punc_marks).split(' ')
+
+
+# Delating empty tokens
+try:
+    for i in splitted_1:
+        if i == '':
+            splitted_1.remove(i)
+except:
+    print('No empty tokens are detected')
+
+    
+# Selecting first 20,000 tokens from a text
+count = 0
+edited_list = []
+for word in splitted_1:
+    if count == 20000:
+        break
+    count += 1
+    edited_list.append(word)
+
+
+# Deviding a text into samples
+sample_1_dict = {}
+sample_1_list = []
+count = 0
+x = 0
+for word in edited_list:
+    if count == 1000:
+        break
+    count += 1
+    sample_1_list.append(word)
+    if word in sample_1_dict:
+         sample_1_dict[word][1] += 1
+    else:
+         sample_1_dict[word] = [word]
+         sample_1_dict[word].append(1)
+
+sample_2_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 1000 < count < 2001:
+       sample_2_list.append(word)
+       if word in sample_1_dict:
+           try:
+               sample_1_dict[word][2] += 1
+           except:
+               sample_1_dict[word].append(1)
+       else:
+         sample_1_dict[word] = [word]
+         x = 0
+         for i in sample_1_dict[word]:
+             while x < 1:
+                sample_1_dict[word].append(0)
+                x += 1
+         sample_1_dict[word].append(1)
+
+def divide_on_samples(number):
+    if word in sample_1_dict:
+          try:
+               sample_1_dict[word][number] += 1
+          except:
+             sample_len = len(sample_1_dict[word])
+             if sample_len < number:
+                x = sample_len
+                while x < number:
+                    sample_1_dict[word].append(0)
+                    x += 1
+                sample_1_dict[word].append(1)
+             else:
+                sample_1_dict[word].append(1)
+    else:
+         sample_1_dict[word] = [word]
+         x = 0
+         while x < number-1:
+                sample_1_dict[word].append(0)
+                x += 1
+         sample_1_dict[word].append(1)
+
+sample_3_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 2000 < count < 3001:
+       sample_3_list.append(word)
+       divide_on_samples(3)
+
+sample_4_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 3000 < count < 4001:
+       sample_4_list.append(word)
+       divide_on_samples(4)
+
+sample_5_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 4000 < count < 5001:
+       sample_5_list.append(word)
+       divide_on_samples(5)
+
+sample_6_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 5000 < count < 6001:
+       sample_6_list.append(word)
+       divide_on_samples(6)
+
+sample_7_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 6000 < count < 7001:
+       sample_7_list.append(word)
+       divide_on_samples(7)
+
+sample_8_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 7000 < count < 8001:
+       sample_8_list.append(word)
+       divide_on_samples(8)
+
+sample_9_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 8000 < count < 9001:
+       sample_9_list.append(word)
+       divide_on_samples(9)
+
+sample_10_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 9000 < count < 10001:
+       sample_10_list.append(word)
+       divide_on_samples(10)
+
+sample_11_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 10000 < count < 11001:
+       sample_11_list.append(word)
+       divide_on_samples(11)
+
+sample_12_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 11000 < count < 12001:
+       sample_12_list.append(word)
+       divide_on_samples(12)
+
+sample_13_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 12000 < count < 13001:
+       sample_13_list.append(word)
+       divide_on_samples(13)
+
+sample_14_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 13000 < count < 14001:
+       sample_14_list.append(word)
+       divide_on_samples(14)
+
+sample_15_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 14000 < count < 15001:
+       sample_15_list.append(word)
+       divide_on_samples(15)
+
+sample_16_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 15000 < count < 16001:
+       sample_16_list.append(word)
+       divide_on_samples(16)
+
+sample_17_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 16000 < count < 17001:
+       sample_17_list.append(word)
+       divide_on_samples(17)
+
+sample_18_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 17000 < count < 18001:
+       sample_18_list.append(word)
+       divide_on_samples(18)
+
+sample_19_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 18000 < count < 19001:
+       sample_19_list.append(word)
+       divide_on_samples(19)
+
+sample_20_list = []
+count = 0
+for word in edited_list:
+    count +=1
+    if 19000 < count:
+       sample_20_list.append(word)
+       divide_on_samples(20)
+
+values1 = list(sample_1_dict.values())
+
+# Adding 0 value to the frequecy of word forms, which were present only in the first sample
+x = 2
+for i in values1:
+    while len(i) <21:
+        i.append(0)
+        x += 1
+
+
+    gen_freq = sum(i[1:21]) # adding to the list the general frequency
+    i.insert(1, gen_freq)
+
+values1_ordered = sorted(values1, key=lambda x:x[1], reverse=True)
+
+for i in values1_ordered:
+   cursor.execute("""INSERT INTO words_forms_freq
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", i)
+conn.commit()
+
+
+
+
+
+# Creating parts of speech frequency dictionary
+
+morph = pymorphy2.MorphAnalyzer(lang='uk')
+part_of_speech = {}
+
+for i in sample_1_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    if freq in part_of_speech:
+        part_of_speech[freq][1] += 1
+    else:
+        part_of_speech[freq] = [freq]
+        part_of_speech[freq].append(1)
+
+for i in sample_2_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    if freq in part_of_speech:
+        try:
+            part_of_speech[freq][2] += 1
+        except:
+            part_of_speech[freq].append(1)
+    else:
+        part_of_speech[freq] = [freq]
+        x = 0
+        for o in part_of_speech[freq]:
+             while x < 1:
+                part_of_speech[freq].append(0)
+                x += 1
+        part_of_speech[freq].append(1)
+
+def count_parts_of_speech(number):
+    if freq in part_of_speech:
+        try:
+            part_of_speech[freq][number] += 1
+        except:
+            freq_len = len(part_of_speech[freq])
+            if freq_len < number:
+                x = freq_len
+                while x < number:
+                    part_of_speech[freq].append(0)
+                    x += 1
+                part_of_speech[freq].append(1)
+            else:
+                part_of_speech[freq].append(1)
+    else:
+        part_of_speech[freq] = [freq]
+        x = 0
+        while x < number-1:
+                part_of_speech[freq].append(0)
+                x += 1
+        part_of_speech[freq].append(1)
+
+for i in sample_3_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(3)
+
+for i in sample_4_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(4)
+
+for i in sample_5_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(5)
+
+for i in sample_6_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(6)
+
+for i in sample_7_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(7)
+
+for i in sample_8_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(8)
+
+for i in sample_9_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(9)
+
+for i in sample_10_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(10)
+
+for i in sample_11_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    if freq in part_of_speech:
+        count_parts_of_speech(11)
+
+for i in sample_12_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(12)
+
+for i in sample_13_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(13)
+
+for i in sample_14_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(14)
+
+for i in sample_15_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(15)
+
+for i in sample_16_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(16)
+
+for i in sample_17_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(17)
+
+for i in sample_18_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(18)
+
+for i in sample_14_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(19)
+
+for i in sample_20_list:
+    parsed1 = morph.parse(i)[0]
+    freq = parsed1.tag.POS
+    count_parts_of_speech(20)
+
+values2 = list(part_of_speech.values())
+
+
+for i in values2:
+    while len(i) <21:
+        i.append(0)
+
+    gen_freq = sum(i[1:21]) # adding the general frequency to the list
+    i.insert(1, gen_freq)
+
+for i in values2:
+    if i[0] == None:
+        values2.remove(i)
+
+values2_ordered = sorted(values2, key=lambda x:x[1], reverse=True)
+
+for i in values2_ordered:
+    i.insert(2, i[1]/20)
+    i.insert(3, round(i[1]/20000, 3))
+
+for i in values2_ordered:
+   cursor.execute("""INSERT INTO part_of_speech_freq
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", i)
+conn.commit()
+
+
+
+
+
+
+lemmas = {}
+for i in sample_1_list:
+    normal_form = morph.parse(i)[0].normal_form
+    if normal_form in lemmas:
+        lemmas[normal_form][1] += 1
+    else:
+        lemmas[normal_form] = [normal_form]
+        lemmas[normal_form].append(1)
+
+for i in sample_2_list:
+    normal_form = morph.parse(i)[0].normal_form
+    if normal_form in lemmas:
+        try:
+            lemmas[normal_form][2] += 1
+        except:
+            lemmas[normal_form].append(1)
+    else:
+        lemmas[normal_form] = [normal_form]
+        x = 0
+        for o in lemmas[normal_form]:
+             while x < 1:
+                lemmas[normal_form].append(0)
+                x += 1
+        lemmas[normal_form].append(1)
+
+def count_lemmas(number):
+    if normal_form in lemmas:
+        try:
+            lemmas[normal_form][number] += 1
+        except:
+            lemmas_len = len(lemmas[normal_form])
+            if lemmas_len < number:
+                x = lemmas_len
+                while x < number:
+                    lemmas[normal_form].append(0)
+                    x += 1
+                lemmas[normal_form].append(1)
+            else:
+                lemmas[normal_form].append(1)
+    else:
+        lemmas[normal_form] = [normal_form]
+        x = 0
+        for o in lemmas[normal_form]:
+             while x < number-1:
+                lemmas[normal_form].append(0)
+                x += 1
+        lemmas[normal_form].append(1)
+
+for i in sample_3_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(3)
+
+for i in sample_4_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(4)
+
+for i in sample_5_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(5)
+
+for i in sample_6_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(6)
+
+for i in sample_7_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(7)
+
+for i in sample_8_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(8)
+
+for i in sample_9_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(9)
+
+for i in sample_10_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(10)
+
+for i in sample_11_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(11)
+
+for i in sample_12_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(12)
+
+for i in sample_13_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(13)
+
+for i in sample_14_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(14)
+
+for i in sample_15_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(15)
+
+for i in sample_16_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(16)
+
+for i in sample_17_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(17)
+
+for i in sample_18_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(18)
+
+for i in sample_19_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(19)
+
+for i in sample_20_list:
+    normal_form = morph.parse(i)[0].normal_form
+    count_lemmas(20)
+
+values3 = list(lemmas.values())
+for i in values3:
+    while len(i) <21:
+        i.append(0)
+
+    gen_freq = sum(i[1:21])
+    i.insert(1, gen_freq)
+
+values3_ordered = sorted(values3, key=lambda x:x[1], reverse=True)
+
+for i in values3_ordered:
+   cursor.execute("""INSERT INTO lemmas_freq
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", i)
+conn.commit()
+
+conn.close()
