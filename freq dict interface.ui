@@ -23,7 +23,7 @@
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
-        <string>Іменник</string>
+        <string>Noun</string>
        </attribute>
        <widget class="QGraphicsView" name="graphicsView">
         <property name="geometry">
